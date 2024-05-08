@@ -1,0 +1,55 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Aplicación de Notas</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/socket.io/4.2.0/socket.io.js"></script>
+</head>
+<body>
+    <h1>Mis Notas</h1>
+    <div id="notas"></div>
+    <h2>Agregar Nueva Nota</h2>
+    <input type="text" id="titulo" placeholder="Título">
+    <textarea id="contenido" placeholder="Contenido"></textarea>
+    <button onclick="crearNota()">Agregar Nota</button>
+
+    <script>
+        var socket = io.connect('http://localhost:5000');
+
+        socket.on('connect', function() {
+            socket.emit('obtener_notas', {'usuario': 'usuario_prueba'});
+        });
+
+        socket.on('notas_obtenidas', function(data) {
+            var notasDiv = document.getElementById('notas');
+            notasDiv.innerHTML = '';
+            data.notas.forEach(function(nota) {
+                var notaDiv = document.createElement('div');
+                notaDiv.innerHTML = '<h3>' + nota[2] + '</h3><p>' + nota[3] + '</p><button onclick="editarNota(' + nota[0] + ', \'' + nota[2] + '\', \'' + nota[3] + '\')">Editar</button><button onclick="eliminarNota(' + nota[0] + ')">Eliminar</button>';
+                notasDiv.appendChild(notaDiv);
+            });
+        });
+
+        function crearNota() {
+            var titulo = document.getElementById('titulo').value;
+            var contenido = document.getElementById('contenido').value;
+            socket.emit('crear_nota', {'usuario': 'usuario_prueba', 'titulo': titulo, 'contenido': contenido});
+        }
+
+        function editarNota(id, titulo, contenido) {
+            var nuevoTitulo = prompt('Editar título:', titulo);
+            var nuevoContenido = prompt('Editar contenido:', contenido);
+            if (nuevoTitulo !== null && nuevoContenido !== null) {
+                socket.emit('editar_nota', {'id': id, 'usuario': 'usuario_prueba', 'titulo': nuevoTitulo, 'contenido': nuevoContenido});
+            }
+        }
+
+        function eliminarNota(id) {
+            if (confirm('¿Estás seguro de que quieres eliminar esta nota?')) {
+                socket.emit('eliminar_nota', {'id': id, 'usuario': 'usuario_prueba'});
+            }
+        }
+    </script>
+</body>
+</html>
